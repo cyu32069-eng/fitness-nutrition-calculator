@@ -1,0 +1,645 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>健身饮食与营养计算器</title>
+
+    <style>
+        /* 设置整个网页的基础样式 */
+        body {
+            margin: 0;
+            padding: 24px;
+            font-family: "Microsoft YaHei", sans-serif;
+            background-color: #eef7f0;
+            color: #222;
+        }
+
+        /* 网页主要内容区域 */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* 页面标题 */
+        h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        /* 说明文字 */
+        .description {
+            color: #666;
+            margin-bottom: 24px;
+        }
+
+        /* 白色卡片 */
+        .card {
+            background-color: white;
+            padding: 24px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        /* 营养数据区域 */
+        .nutrition-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        /* 每个营养数据的小卡片 */
+        .nutrition-item {
+            background-color: #f7f8fa;
+            padding: 16px 10px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .nutrition-label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .nutrition-value {
+            font-size: 22px;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        /* 手机屏幕适配 */
+        @media (max-width: 600px) {
+            body {
+                padding: 14px;
+            }
+
+            h1 {
+                font-size: 23px;
+            }
+
+            .card {
+                padding: 16px;
+            }
+
+                       .nutrition-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* 食物输入区域 */
+        .food-form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .food-form input {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px;
+            border: 1px solid #d8dde3;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .food-form button {
+            padding: 12px 20px;
+            background-color: #287d4f;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .food-form button:hover {
+            background-color: #20643f;
+        }
+
+        .food-list {
+            padding-left: 20px;
+        }
+
+        .food-list li {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>健身饮食与营养计算器</h1>
+        <p class="description">
+            记录每日饮食，了解你的热量与宏量营养素摄入。
+        </p>
+
+
+<div class="card">
+    <h2>今日营养摄入</h2>
+
+    <div class="nutrition-grid">
+        <div class="nutrition-item">
+            <div class="nutrition-label">总热量</div>
+            <div class="nutrition-value" id="totalCalories">0 kcal</div>
+        </div>
+
+        <div class="nutrition-item">
+            <div class="nutrition-label">蛋白质</div>
+            <div class="nutrition-value" id="totalProtein">0 g</div>
+        </div>
+
+        <div class="nutrition-item">
+            <div class="nutrition-label">碳水化合物</div>
+            <div class="nutrition-value" id="totalCarbs">0 g</div>
+        </div>
+
+        <div class="nutrition-item">
+            <div class="nutrition-label">脂肪</div>
+            <div class="nutrition-value" id="totalFat">0 g</div>
+            </div>
+</div>
+
+<div class="card">
+    <h2>饮食记录</h2>
+    <p>输入食物名称和重量，尝试添加一条记录。</p>
+
+    <div class="food-form">
+       <input
+    type="text"
+    id="foodName"
+    list="foodOptions"
+    placeholder="输入或选择食物名称"
+    autocomplete="off"
+>
+
+<datalist id="foodOptions"></datalist>
+        <input
+            type="number"
+            id="foodWeight"
+            placeholder="重量（克）"
+            min="0"
+            step="any"
+        >
+
+        <button type="button" id="addFoodBtn">添加食物</button>
+<button type="button" id="clearAllBtn">清空全部记录</button>
+<button type="button" id="exportBtn">导出饮食记录</button>
+<button type="button" id="importBtn">导入饮食记录</button>
+<input type="file" id="importFile" accept=".json" hidden>
+    </div>
+
+    <p id="emptyMessage">暂无饮食记录，请添加第一条食物。</p>
+<ul class="food-list" id="foodList"></ul>
+</div>
+
+    </div>
+
+    <script>
+        
+        // 示例营养数据库：所有数值均为每100克
+        // 仅用于开发测试，不是权威营养数据
+        const foodDatabase = {
+            "鸡胸肉": {
+                calories: 120,
+                protein: 23,
+                carbs: 0,
+                fat: 3
+            },
+            "米饭": {
+                calories: 130,
+                protein: 2.7,
+                carbs: 28.2,
+                fat: 0.3
+            },
+            "鸡蛋": {
+                calories: 143,
+                protein: 12.6,
+                carbs: 0.7,
+                fat: 9.5
+            },
+            "燕麦": {
+                calories: 380,
+                protein: 13,
+                carbs: 68,
+                fat: 7
+            }
+        };
+// 找到页面中的输入框、按钮和食物列表
+        const foodNameInput = document.getElementById("foodName");
+        const foodWeightInput = document.getElementById("foodWeight");
+        const addFoodBtn = document.getElementById("addFoodBtn");
+const clearAllBtn = document.getElementById("clearAllBtn");
+const exportBtn = document.getElementById("exportBtn");
+const importBtn = document.getElementById("importBtn");
+const importFile = document.getElementById("importFile");
+        const foodList = document.getElementById("foodList");
+// 找到空列表提示
+const emptyMessage = document.getElementById("emptyMessage");
+// 找到顶部四个营养数字
+const totalCaloriesElement = document.getElementById("totalCalories");
+const totalProteinElement = document.getElementById("totalProtein");
+const totalCarbsElement = document.getElementById("totalCarbs");
+const totalFatElement = document.getElementById("totalFat");
+
+// 保存所有已添加食物的营养总数
+let totalCalories = 0;
+let totalProtein = 0;
+let totalCarbs = 0;
+let totalFat = 0;
+// 保存当前所有食物记录
+const foodRecords = [];
+// 将当前食物记录保存到浏览器
+function saveFoodRecords() {
+    localStorage.setItem(
+        "nutritionFoodRecords",
+        JSON.stringify(foodRecords)
+    );
+}
+// 统一更新顶部营养卡片
+// 根据当前全部记录，重新计算并显示营养总数
+function updateNutritionCards() {
+    totalCalories = 0;
+    totalProtein = 0;
+    totalCarbs = 0;
+    totalFat = 0;
+
+    foodRecords.forEach(function (record) {
+        totalCalories += record.calories;
+        totalProtein += record.protein;
+        totalCarbs += record.carbs;
+        totalFat += record.fat;
+    });
+
+    totalCaloriesElement.textContent = totalCalories.toFixed(1) + " kcal";
+    totalProteinElement.textContent = totalProtein.toFixed(1) + " g";
+    totalCarbsElement.textContent = totalCarbs.toFixed(1) + " g";
+    totalFatElement.textContent = totalFat.toFixed(1) + " g";
+
+    emptyMessage.hidden = foodRecords.length > 0;
+}
+function addFoodRecord(record) {
+    const li = document.createElement("li");
+
+    // 单独显示记录文字，避免更新时覆盖按钮
+    const recordText = document.createElement("span");
+
+    function updateRecordText() {
+        recordText.textContent =
+            record.name + " — " + record.weight + " 克" +
+            " | 热量：" + record.calories.toFixed(1) + " kcal" +
+            " | 蛋白质：" + record.protein.toFixed(1) + " g" +
+            " | 碳水：" + record.carbs.toFixed(1) + " g" +
+            " | 脂肪：" + record.fat.toFixed(1) + " g" +
+            "（示例估算）";
+    }
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.textContent = "修改重量";
+    editBtn.style.marginLeft = "10px";
+
+    editBtn.addEventListener("click", function () {
+        const input = prompt("请输入新的重量（克）：", record.weight);
+
+        // 点击取消时，保留原记录
+        if (input === null) {
+            return;
+        }
+
+        const newWeight = Number(input);
+
+        if (
+            input.trim() === "" ||
+            !Number.isFinite(newWeight) ||
+            newWeight <= 0
+        ) {
+            alert("请输入大于 0 的有效重量！");
+            return;
+        }
+
+        // 根据重量变化，按比例计算新的营养值
+        const ratio = newWeight / record.weight;
+        const newCalories = record.calories * ratio;
+        const newProtein = record.protein * ratio;
+        const newCarbs = record.carbs * ratio;
+        const newFat = record.fat * ratio;
+
+        if (
+            ![newCalories, newProtein, newCarbs, newFat].every(
+                Number.isFinite
+            )
+        ) {
+            alert("重量数值过大，无法计算，请重新输入。");
+            return;
+        }
+
+        // 总数扣除旧值，再加上新值
+       
+
+        // 更新这条记录本身的数据
+        record.weight = newWeight;
+        record.calories = newCalories;
+        record.protein = newProtein;
+        record.carbs = newCarbs;
+        record.fat = newFat;
+
+        updateRecordText();
+        updateNutritionCards();
+        saveFoodRecords();
+    });
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.textContent = "删除";
+    deleteBtn.style.marginLeft = "10px";
+
+    deleteBtn.addEventListener("click", function () {
+        const recordIndex = foodRecords.indexOf(record);
+
+        if (recordIndex === -1) {
+            return;
+        }
+
+        foodRecords.splice(recordIndex, 1);
+
+        // 使用记录当前的营养值，确保修改后也能正确删除
+       
+
+        li.remove();
+        updateNutritionCards();
+        saveFoodRecords();
+    });
+
+    updateRecordText();
+    li.appendChild(recordText);
+    li.appendChild(editBtn);
+    li.appendChild(deleteBtn);
+    foodList.appendChild(li);
+
+    foodRecords.push(record);
+
+    
+
+    updateNutritionCards();
+}
+// 点击按钮时执行下面的操作
+       
+        addFoodBtn.addEventListener("click", function () {
+            const name = foodNameInput.value.trim();
+            const weightText = foodWeightInput.value.trim();
+            const weight = Number(weightText);
+
+            // 检查食物名称
+            if (name === "") {
+                alert("请输入食物名称！");
+                return;
+            }
+
+            // 检查重量
+            if (
+                weightText === "" ||
+                !Number.isFinite(weight) ||
+                weight <= 0
+            ) {
+                alert("请输入大于 0 的有效重量！");
+                return;
+            }
+
+            // 检查食物是否在数据库中
+            const nutrition = foodDatabase[name];
+
+            if (!nutrition) {
+                alert("暂时没有这种食物的示例营养数据。请尝试：鸡胸肉、米饭、鸡蛋或燕麦。");
+                return;
+            }
+
+            // 根据实际重量计算营养值
+            const ratio = weight / 100;
+            const calories = nutrition.calories * ratio;
+            const protein = nutrition.protein * ratio;
+            const carbs = nutrition.carbs * ratio;
+            const fat = nutrition.fat * ratio;
+
+            // 创建一条食物记录
+            // 使用共用函数添加本条记录
+addFoodRecord({
+    name: name,
+    weight: weight,
+    calories: calories,
+    protein: protein,
+    carbs: carbs,
+    fat: fat
+});
+
+// 保存最新记录
+saveFoodRecords();
+            // 清空输入框
+            foodNameInput.value = "";
+            foodWeightInput.value = "";
+            foodNameInput.focus();
+        });
+// 点击按钮时，清空全部饮食记录
+clearAllBtn.addEventListener("click", function () {
+    // 没有记录时，不需要清空
+    if (foodList.children.length === 0) {
+        alert("目前没有需要清空的记录。");
+        return;
+    }
+
+    // 确认后才继续执行
+    const confirmed = confirm("确定清空全部饮食记录吗？");
+
+    if (!confirmed) {
+        return;
+    }
+
+    // 清空列表
+    foodList.replaceChildren();
+// 同时清空保存的食物数据
+foodRecords.length = 0;
+    // 将累计营养值归零
+    totalCalories = 0;
+    totalProtein = 0;
+    totalCarbs = 0;
+    totalFat = 0;
+
+    // 更新顶部数字和空列表提示
+    updateNutritionCards();
+saveFoodRecords();
+});
+// 读取保存的数据，恢复页面
+function loadFoodRecords() {
+    const savedText = localStorage.getItem("nutritionFoodRecords");
+
+    // 第一次使用时可能还没有保存的数据
+    if (savedText === null) {
+        updateNutritionCards();
+        return;
+    }
+
+    let savedRecords;
+
+    try {
+        savedRecords = JSON.parse(savedText);
+    } catch (error) {
+        alert("保存的数据无法读取，请把错误情况告诉我。");
+        return;
+    }
+
+    if (!Array.isArray(savedRecords)) {
+        alert("保存的数据格式不正确，请把错误情况告诉我。");
+        return;
+    }
+
+    savedRecords.forEach(function (record) {
+        addFoodRecord(record);
+    });
+
+    updateNutritionCards();
+}
+
+// 页面打开时执行一次
+loadFoodRecords();
+    // 在任意输入框中按回车，触发添加按钮
+[foodNameInput, foodWeightInput].forEach(function (input) {
+    input.addEventListener("keydown", function (event) {
+        // 使用中文输入法选字时，不触发添加
+        if (event.isComposing) {
+            return;
+        }
+
+        if (event.key === "Enter") {
+            event.preventDefault();
+            addFoodBtn.click();
+        }
+    });
+});
+// 找到食物候选列表
+const foodOptions = document.getElementById("foodOptions");
+
+// 根据数据库中的食物名称，生成候选项
+Object.keys(foodDatabase).forEach(function (foodName) {
+    const option = document.createElement("option");
+    option.value = foodName;
+    foodOptions.appendChild(option);
+});
+// 将当前饮食记录下载为 JSON 文件
+exportBtn.addEventListener("click", function () {
+    if (foodRecords.length === 0) {
+        alert("目前没有可以导出的记录。");
+        return;
+    }
+
+    // 转换为便于阅读的文字
+    const exportText = JSON.stringify(foodRecords, null, 2);
+
+    // 创建文件内容和临时下载地址
+    const file = new Blob([exportText], {
+        type: "application/json;charset=utf-8"
+    });
+    const downloadUrl = URL.createObjectURL(file);
+
+    // 创建下载链接并触发下载
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = "饮食记录备份.json";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    // 下载触发后，释放临时地址
+    setTimeout(function () {
+        URL.revokeObjectURL(downloadUrl);
+    }, 1000);
+});
+// 点击导入按钮，打开文件选择窗口
+importBtn.addEventListener("click", function () {
+    importFile.click();
+});
+
+// 选中文件后读取并恢复记录
+importFile.addEventListener("change", async function () {
+    const file = importFile.files[0];
+
+    if (!file) {
+        return;
+    }
+
+    let importedRecords;
+
+    // 先读取并检查文件，不改动当前记录
+    try {
+        const text = await file.text();
+        importedRecords = JSON.parse(text);
+
+        if (!Array.isArray(importedRecords)) {
+            throw new Error("文件内容必须是食物记录数组。");
+        }
+
+        const valid = importedRecords.every(function (record) {
+            return (
+                record !== null &&
+                typeof record === "object" &&
+                typeof record.name === "string" &&
+                record.name.trim() !== "" &&
+                Number.isFinite(record.weight) &&
+                record.weight > 0 &&
+                ["calories", "protein", "carbs", "fat"].every(
+                    function (key) {
+                        return (
+                            Number.isFinite(record[key]) &&
+                            record[key] >= 0
+                        );
+                    }
+                )
+            );
+        });
+
+        if (!valid) {
+            throw new Error("部分记录缺少有效的名称、重量或营养数据。");
+        }
+    } catch (error) {
+        alert("导入失败：" + error.message);
+        importFile.value = "";
+        return;
+    }
+
+    const confirmed = confirm(
+        "将用备份中的 " + importedRecords.length +
+        " 条记录替换当前全部记录，是否继续？"
+    );
+
+    if (!confirmed) {
+        importFile.value = "";
+        return;
+    }
+
+    // 清除当前记录和总数
+    foodList.replaceChildren();
+    foodRecords.length = 0;
+    totalCalories = 0;
+    totalProtein = 0;
+    totalCarbs = 0;
+    totalFat = 0;
+
+    // 复用已有函数，恢复每条记录
+    importedRecords.forEach(function (record) {
+        addFoodRecord(record);
+    });
+
+    updateNutritionCards();
+    saveFoodRecords();
+
+    // 允许下一次再次选择同一个文件
+    importFile.value = "";
+
+    alert("导入完成！");
+});
+</script>
+</body>
+</html>
+</body>
+</html>
